@@ -59,6 +59,11 @@ export {
   type JWTVerified,
 }
 
+export { SoftwareSigner } from './software-signer/SoftwareSigner.js'
+export type { SignAlgorithm } from './software-signer/SoftwareSigner.js'
+
+export { SoftwareVerifier } from './software-verifier/SoftwareVerifier.js'
+
 export { type JWTOptions, type JWTVerifyOptions } from './JWT.js'
 
 export {
