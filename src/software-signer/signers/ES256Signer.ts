@@ -1,6 +1,6 @@
-import { leftpad, toJose } from '../util.js'
-import { Signer } from '../JWT.js'
-import { sha256 } from '../Digest.js'
+import { leftpad, toJose } from '../../util.js'
+import { Signer } from '../../JWT.js'
+import { sha256 } from '../../Digest.js'
 import { p256 } from '@noble/curves/p256'
 
 /**

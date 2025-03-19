@@ -1,5 +1,5 @@
-import { fromJose, hexToBytes } from '../util.js'
-import type { Signer } from '../JWT.js'
+import { fromJose, hexToBytes } from '../../util.js'
+import type { Signer } from '../../JWT.js'
 import { ES256KSigner } from './ES256KSigner.js'
 
 /**
