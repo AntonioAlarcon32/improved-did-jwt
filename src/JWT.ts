@@ -533,13 +533,13 @@ export async function verifyJWT(
       throw new Error(`${JWT_ERROR.INVALID_JWT}: No authenticator found for did URL ${didUrl}`)
     }
 
-    signer = await verifyProof(jwt, { payload, header, signature, data }, authenticator, options)
+    signer = await verifyProof(jwt, { payload, header, signature, data }, authenticator, options, verifier)
   } else {
     let i = 0
     while (!signer && i < authenticators.length) {
       const authenticator = authenticators[i]
       try {
-        signer = await verifyProof(jwt, { payload, header, signature, data }, authenticator, options)
+        signer = await verifyProof(jwt, { payload, header, signature, data }, authenticator, options, verifier)
       } catch (e) {
         if (!(e as Error).message.includes(JWT_ERROR.INVALID_SIGNATURE) || i === authenticators.length - 1) throw e
       }
