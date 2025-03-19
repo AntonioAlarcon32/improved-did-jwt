@@ -16,6 +16,7 @@ import {
   verifyJWS,
   verifyJWT,
 } from './JWT.js'
+import { AbstractSigner } from './AbstractSigner.js'
 
 export { toEthereumAddress, concatKDF } from './Digest.js'
 
@@ -58,6 +59,9 @@ export {
   type JWTPayload,
   type JWTVerified,
 }
+
+export { AbstractSigner } from './AbstractSigner.js'
+export { AbstractVerifier } from './AbstractVerifier.js'
 
 export { SoftwareSigner } from './software-signer/SoftwareSigner.js'
 export type { SignAlgorithm } from './software-signer/SoftwareSigner.js'
