@@ -2,7 +2,7 @@ import { createDIDDocument, antelopeChainRegistry, checkDID } from '@tonomy/ante
 import { parse } from 'did-resolver'
 import { Signer } from '../JWT'
 import { PrivateKey, KeyType } from '@greymass/eosio'
-import { ES256KSigner } from '../signers/ES256KSigner'
+import { ES256KSigner } from '../software-signer/signers/ES256KSigner'
 
 type AntelopePermission = {
   threshold: number
