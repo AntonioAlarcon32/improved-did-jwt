@@ -1,9 +1,9 @@
-import SimpleSigner from './signers/SimpleSigner.js'
-import EllipticSigner from './signers/EllipticSigner.js'
-import NaclSigner from './signers/NaclSigner.js'
-import { ES256KSigner } from './signers/ES256KSigner.js'
-import { ES256Signer } from './signers/ES256Signer.js'
-import { EdDSASigner } from './signers/EdDSASigner.js'
+import SimpleSigner from './software-signer/signers/SimpleSigner.js'
+import EllipticSigner from './software-signer/signers/EllipticSigner.js'
+import NaclSigner from './software-signer/signers/NaclSigner.js'
+import { ES256KSigner } from './software-signer/signers/ES256KSigner.js'
+import { ES256Signer } from './software-signer/signers/ES256Signer.js'
+import { EdDSASigner } from './software-signer/signers/EdDSASigner.js'
 import {
   createJWS,
   createJWT,

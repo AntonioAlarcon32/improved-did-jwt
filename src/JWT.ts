@@ -1,13 +1,17 @@
 import canonicalizeData from 'canonicalize'
 import { DIDDocument, DIDResolutionResult, parse, ParsedDID, Resolvable, VerificationMethod } from 'did-resolver'
-import SignerAlg from './SignerAlgorithm.js'
-import { decodeBase64url, EcdsaSignature, encodeBase64url, KNOWN_JWA, SUPPORTED_PUBLIC_KEY_TYPES } from './util.js'
-import VerifierAlgorithm from './VerifierAlgorithm.js'
+import { decodeBase64url, EcdsaSignature, encodeBase64url } from './util.js'
+// import VerifierAlgorithm from './VerifierAlgorithm.js'
 import { JWT_ERROR } from './Errors.js'
 import { verifyProof } from './ConditionalAlgorithm.js'
+import { SignAlgorithm, SoftwareSigner } from './software-signer/SoftwareSigner.js'
+import { AbstractSigner } from './AbstractSigner.js'
+import { AbstractVerifier } from './AbstractVerifier.js'
+import { SoftwareVerifier } from './software-verifier/SoftwareVerifier.js'
 
 export type Signer = (data: string | Uint8Array) => Promise<EcdsaSignature | string>
 export type SignerAlgorithm = (payload: string, signer: Signer) => Promise<string>
+export type Verifier = (data: string, signature: string, authenticators: VerificationMethod[]) => VerificationMethod
 
 export type ProofPurposeTypes =
   | 'assertionMethod'
@@ -18,7 +22,7 @@ export type ProofPurposeTypes =
 
 export interface JWTOptions {
   issuer: string
-  signer: Signer
+  signer: Signer | AbstractSigner
   /**
    * @deprecated Please use `header.alg` to specify the JWT algorithm.
    */
@@ -147,7 +151,7 @@ export const SELF_ISSUED_V0_1 = 'https://self-issued.me'
 
 type LegacyVerificationMethod = { publicKey?: string }
 
-const defaultAlg: KNOWN_JWA = 'ES256K'
+const defaultAlg = 'ES256K'
 const DID_JSON = 'application/did+json'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -219,7 +223,7 @@ export function decodeJWT(jwt: string, recurse = true): JWTDecoded {
  */
 export async function createJWS(
   payload: string | Partial<JWTPayload>,
-  signer: Signer,
+  signer: Signer | AbstractSigner,
   header: Partial<JWTHeader> = {},
   options: JWSCreationOptions = {}
 ): Promise<string> {
@@ -227,8 +231,18 @@ export async function createJWS(
   const encodedPayload = typeof payload === 'string' ? payload : encodeSection(payload, options.canonicalize)
   const signingInput: string = [encodeSection(header, options.canonicalize), encodedPayload].join('.')
 
-  const jwtSigner: SignerAlgorithm = SignerAlg(header.alg)
-  const signature: string = await jwtSigner(signingInput, signer)
+  // const jwtSigner: SignerAlgorithm = SignerAlg(header.alg)
+  // const signature: string = await jwtSigner(signingInput, signer)
+  let mySigner: AbstractSigner
+  if (signer instanceof Function) {
+    if (!SoftwareSigner.supportedAlgorithms.includes(header.alg as SignAlgorithm)) {
+      throw new Error(`Unsupported algorithm ${header.alg}`)
+    }
+    mySigner = new SoftwareSigner(signer, header.alg as SignAlgorithm)
+  } else {
+    mySigner = signer
+  }
+  const signature = await mySigner.sign(signingInput, header.alg)
 
   // JWS Compact Serialization
   // https://www.rfc-editor.org/rfc/rfc7515#section-7.1
@@ -250,7 +264,7 @@ export async function createJWS(
  *  @param    {String}            options.issuer        The DID of the issuer (signer) of JWT
  *  @param    {String}            options.alg           [DEPRECATED] The JWT signing algorithm to use. Supports:
  *   [ES256K, ES256K-R, Ed25519, EdDSA], Defaults to: ES256K. Please use `header.alg` to specify the algorithm
- *  @param    {Signer}            options.signer        a `Signer` function, Please see `ES256KSigner` or `EdDSASigner`
+ *  @param    {Signer | ISigner}            options.signer        a `Signer` function, Please see `ES256KSigner` or `EdDSASigner`, or a class implementing `ISigner`
  *  @param    {boolean}           options.canonicalize  optional flag to canonicalize header and payload before signing
  *  @param    {Object}            header                optional object to specify or customize the JWT header
  *  @return   {Promise<Object, Error>}                  a promise which resolves with a signed JSON Web Token or
@@ -337,8 +351,13 @@ export async function createMultisignatureJWT(
 
 export function verifyJWTDecoded(
   { header, payload, data, signature }: JWTDecoded,
-  pubKeys: VerificationMethod | VerificationMethod[]
+  pubKeys: VerificationMethod | VerificationMethod[],
+  verifier?: AbstractVerifier
 ): VerificationMethod {
+  if (verifier === undefined) {
+    verifier = new SoftwareVerifier()
+  }
+
   if (!Array.isArray(pubKeys)) pubKeys = [pubKeys]
 
   const iss = payload.iss
@@ -347,7 +366,7 @@ export function verifyJWTDecoded(
     if (iss !== payload.iss) throw new Error(`${JWT_ERROR.INVALID_JWT}: multiple issuers`)
 
     try {
-      const result = VerifierAlgorithm(header.alg)(data, signature, pubKeys)
+      const result = verifier.verify(header.alg, data, signature, pubKeys)
 
       return result
     } catch (e) {
@@ -367,10 +386,14 @@ export function verifyJWTDecoded(
 
 export function verifyJWSDecoded(
   { header, data, signature }: JWSDecoded,
-  pubKeys: VerificationMethod | VerificationMethod[]
+  pubKeys: VerificationMethod | VerificationMethod[],
+  verifier?: AbstractVerifier
 ): VerificationMethod {
+  if (verifier === undefined) {
+    verifier = new SoftwareVerifier()
+  }
   if (!Array.isArray(pubKeys)) pubKeys = [pubKeys]
-  const signer: VerificationMethod = VerifierAlgorithm(header.alg)(data, signature, pubKeys)
+  const signer: VerificationMethod = verifier.verify(header.alg, data, signature, pubKeys)
   return signer
 }
 
@@ -429,7 +452,8 @@ export async function verifyJWT(
     proofPurpose: undefined,
     policies: {},
     didAuthenticator: undefined,
-  }
+  },
+  verifier?: AbstractVerifier
 ): Promise<JWTVerified> {
   if (!options.resolver) throw new Error('missing_resolver: No DID resolver has been configured')
   const { payload, header, signature, data }: JWTDecoded = decodeJWT(jwt, false)
@@ -440,7 +464,13 @@ export async function verifyJWT(
     : options.proofPurpose
 
   let didUrl: string | undefined
+  let myVerifier: AbstractVerifier
 
+  if (!verifier) {
+    myVerifier = new SoftwareVerifier()
+  } else {
+    myVerifier = verifier
+  }
   if (!payload.iss && !payload.client_id) {
     throw new Error(`${JWT_ERROR.INVALID_JWT}: JWT iss or client_id are required`)
   }
@@ -486,7 +516,8 @@ export async function verifyJWT(
       options.resolver,
       header.alg,
       didUrl,
-      proofPurpose
+      proofPurpose,
+      myVerifier
     ))
     // Add to options object for recursive reference
     options.didAuthenticator = { didResolutionResult, authenticators, issuer }
@@ -579,9 +610,13 @@ export async function resolveAuthenticator(
   resolver: Resolvable,
   alg: string,
   issuer: string,
-  proofPurpose?: ProofPurposeTypes
+  proofPurpose?: ProofPurposeTypes,
+  verifier?: AbstractVerifier
 ): Promise<DIDAuthenticator> {
-  const types: string[] = SUPPORTED_PUBLIC_KEY_TYPES[alg as KNOWN_JWA]
+  if (verifier === undefined) {
+    verifier = new SoftwareVerifier()
+  }
+  const types: string[] = verifier.getSupportedVerificationMethods(alg)
   if (!types || types.length === 0) {
     throw new Error(`${JWT_ERROR.NOT_SUPPORTED}: No supported signature types for algorithm ${alg}`)
   }
