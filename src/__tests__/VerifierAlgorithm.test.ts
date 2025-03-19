@@ -10,41 +10,52 @@ import {
   bytesToMultibase,
   hexToBytes,
 } from '../util.js'
-import { EdDSASigner } from '../signers/EdDSASigner.js'
-import { ES256KSigner } from '../signers/ES256KSigner.js'
+import { EdDSASigner } from '../software-signer/signers/EdDSASigner.js'
+import { ES256KSigner } from '../software-signer/signers/ES256KSigner.js'
 import { toEthereumAddress } from '../Digest.js'
 import { publicKeyToAddress as toBip122Address } from '../blockchains/bip122.js'
 import { publicKeyToAddress as toCosmosAddressWithoutPrefix } from '../blockchains/cosmos.js'
 import { p256 } from '@noble/curves/p256'
 import { secp256k1 } from '@noble/curves/secp256k1'
 
-import { ES256Signer } from '../signers/ES256Signer.js'
-import VerifierAlgorithm from '../VerifierAlgorithm.js'
+import { ES256Signer } from '../software-signer/signers/ES256Signer.js'
+// import VerifierAlgorithm from '../VerifierAlgorithm.js'
 import { createJWT } from '../JWT.js'
+import { SoftwareVerifier } from '../software-verifier/SoftwareVerifier.js'
 
 describe('VerifierAlgorithm', () => {
+  const verifier = new SoftwareVerifier()
   it('supports ES256', () => {
-    expect(typeof VerifierAlgorithm('ES256')).toEqual('function')
+    expect(verifier.getSupportedVerificationMethods('ES256')).toBeDefined()
   })
 
   it('supports ES256K', () => {
-    expect(typeof VerifierAlgorithm('ES256K')).toEqual('function')
+    expect(verifier.getSupportedVerificationMethods('ES256K')).toBeDefined()
   })
 
   it('supports ES256K-R', () => {
-    expect(typeof VerifierAlgorithm('ES256K-R')).toEqual('function')
+    expect(verifier.getSupportedVerificationMethods('ES256K-R')).toBeDefined()
   })
 
   it('fails on unsupported algorithm', () => {
-    expect(() => VerifierAlgorithm('BADALGO')).toThrowError('Unsupported algorithm BADALGO')
-  })
+    expect(() => {
+      //@ts-ignore-line
+      verifier.getSupportedVerificationMethods('BADALGO');
+    }).toThrow('Unsupported algorithm BADALGO');
+  });
 
   it('supports EdDSA', () => {
-    expect(typeof VerifierAlgorithm('EdDSA')).toEqual('function')
+    expect(verifier.getSupportedVerificationMethods('EdDSA')).toBeDefined()
+  })
+
+  it('supports Ed25519', () => {
+    expect(verifier.getSupportedVerificationMethods('Ed25519')).toBeDefined()
   })
 })
 
 describe('ES256', () => {
+  const verifier = new SoftwareVerifier()
+
   const mnid = '2nQtiQG6Cgm1GYTBaaKAgr76uY7iSexUkqX'
   const did = `did:uport:${mnid}`
   const privateKey = hexToBytes('736f625c9dda78a94bb16840c82779bb7bc18014b8ede52f0f03429902fc4ba8')
@@ -124,13 +135,12 @@ describe('ES256', () => {
       '0404f9c36f8964623378bdc068d4bce07ed17c8fa486f9ac0c2613ca3c8c306d7bb61cd36717b8ac5e4fea8ad23dc8d0783c2318ee4ad7a80db6e0026ad0b072a24f',
   }
 
-  const verifier = VerifierAlgorithm('ES256')
   it('validates signature and picks correct public key', async () => {
     expect.assertions(1)
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer }, { alg: 'ES256' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, ecKey2])).toEqual(ecKey2)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [ecKey1, ecKey2])).toEqual(ecKey2)
   })
 
   it('validates with publicKeyBase58', async () => {
@@ -141,7 +151,7 @@ describe('ES256', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyBase64', async () => {
@@ -152,7 +162,7 @@ describe('ES256', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyJwk', async () => {
@@ -163,7 +173,7 @@ describe('ES256', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyMultibase', async () => {
@@ -172,7 +182,7 @@ describe('ES256', () => {
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     const pubkey = ecKey3
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyMultibase Multikey', async () => {
@@ -183,7 +193,7 @@ describe('ES256', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyMultibase Multikey without codec', async () => {
@@ -194,7 +204,7 @@ describe('ES256', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates signature with compressed public key and picks correct public key', async () => {
@@ -202,7 +212,7 @@ describe('ES256', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer }, { alg: 'ES256' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, compressedKey])).toEqual(compressedKey)
+    return expect(verifier.verify('ES256', parts[1], parts[2], [ecKey1, compressedKey])).toEqual(compressedKey)
   })
 
   it('throws error if invalid signature', async () => {
@@ -210,7 +220,7 @@ describe('ES256', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer }, { alg: 'ES256' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(() => verifier(parts[1], parts[2], [ecKey1])).toThrowError(
+    return expect(() => verifier.verify('ES256', parts[1], parts[2], [ecKey1])).toThrowError(
       new Error('invalid_signature: Signature invalid for JWT')
     )
   })
@@ -220,14 +230,14 @@ describe('ES256', () => {
     const jwt = (await createJWT({ bla: 'bla' }, { issuer: did, signer }, { alg: 'ES256' })) + 'aa'
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(() => verifier(parts[1], parts[2], [ecKey1])).toThrowError(new Error('wrong signature length'))
+    return expect(() => verifier.verify('ES256', parts[1], parts[2], [ecKey1])).toThrowError(new Error('wrong signature length'))
   })
 
   it('validates signature with compressed public key and picks correct public key when malformed keys are encountered first', async () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer }, { alg: 'ES256' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [malformedKey1, malformedKey2, malformedKey3, compressedKey])).toEqual(
+    return expect(verifier.verify('ES256', parts[1], parts[2], [malformedKey1, malformedKey2, malformedKey3, compressedKey])).toEqual(
       compressedKey
     )
   })
@@ -367,13 +377,14 @@ const malformedKey3 = {
 }
 
 describe('ES256K', () => {
-  const verifier = VerifierAlgorithm('ES256K')
+  const verifier = new SoftwareVerifier()
+
   it('validates signature and picks correct public key', async () => {
     expect.assertions(1)
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, ecKey2])).toEqual(ecKey2)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [ecKey1, ecKey2])).toEqual(ecKey2)
   })
 
   it('validates with publicKeyBase58', async () => {
@@ -384,7 +395,7 @@ describe('ES256K', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyBase64', async () => {
@@ -395,7 +406,7 @@ describe('ES256K', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyJwk', async () => {
@@ -406,7 +417,7 @@ describe('ES256K', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyMultibase', async () => {
@@ -417,7 +428,7 @@ describe('ES256K', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyMultibase multicodec', async () => {
@@ -428,7 +439,7 @@ describe('ES256K', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates signature with compressed public key and picks correct public key', async () => {
@@ -436,7 +447,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, compressedKey])).toEqual(compressedKey)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [ecKey1, compressedKey])).toEqual(compressedKey)
   })
 
   it('throws error if invalid signature', async () => {
@@ -444,7 +455,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(() => verifier(parts[1], parts[2], [ecKey1])).toThrowError(
+    return expect(() => verifier.verify('ES256K', parts[1], parts[2], [ecKey1])).toThrowError(
       new Error('invalid_signature: Signature invalid for JWT')
     )
   })
@@ -453,7 +464,7 @@ describe('ES256K', () => {
     expect.assertions(1)
     const jwt = (await createJWT({ bla: 'bla' }, { issuer: did, signer })) + 'aa'
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
-    return expect(() => verifier(parts!![1], parts!![2], [ecKey1])).toThrowError(
+    return expect(() => verifier.verify('ES256K', parts!![1], parts!![2], [ecKey1])).toThrowError(
       new Error('compactSignature of length 64 expected, got 66')
     )
   })
@@ -462,7 +473,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [malformedKey1, malformedKey2, malformedKey3, compressedKey])).toEqual(
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [malformedKey1, malformedKey2, malformedKey3, compressedKey])).toEqual(
       compressedKey
     )
   })
@@ -472,7 +483,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ethAddress])).toEqual(ethAddress)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [ethAddress])).toEqual(ethAddress)
   })
 
   it('validates signature produced by blockchainAccountId - github #14, #155', async () => {
@@ -480,7 +491,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [blockchainAddress])).toEqual(blockchainAddress)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [blockchainAddress])).toEqual(blockchainAddress)
   })
 
   it('validates signature produced by blockchainAccountId - CAIP 10 (EIP 155)', async () => {
@@ -488,7 +499,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [blockchainAddressCaip10])).toEqual(blockchainAddressCaip10)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [blockchainAddressCaip10])).toEqual(blockchainAddressCaip10)
   })
 
   it('validates signature produced by blockchainAccountId - CAIP 10 (BIP 122)', async () => {
@@ -496,7 +507,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [blockchainAddressBip122])).toEqual(blockchainAddressBip122)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [blockchainAddressBip122])).toEqual(blockchainAddressBip122)
   })
 
   it('validates signature produced by blockchainAccountId - CAIP 10 (Cosmos)', async () => {
@@ -504,7 +515,7 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [blockchainAddressCosmos])).toEqual(blockchainAddressCosmos)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [blockchainAddressCosmos])).toEqual(blockchainAddressCosmos)
   })
 
   it('validates signature produced by EcdsaSecp256k1RecoveryMethod2020 - github #152', async () => {
@@ -512,19 +523,19 @@ describe('ES256K', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [recoveryMethod2020Key])).toEqual(recoveryMethod2020Key)
+    return expect(verifier.verify('ES256K', parts[1], parts[2], [recoveryMethod2020Key])).toEqual(recoveryMethod2020Key)
   })
 })
 
 describe('ES256K-R', () => {
-  const verifier = VerifierAlgorithm('ES256K-R')
+  const verifier = new SoftwareVerifier()
 
   it('validates signature and picks correct public key', async () => {
     expect.assertions(1)
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, ecKey2])).toEqual(ecKey2)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, ecKey2])).toEqual(ecKey2)
   })
 
   it('validates signature and picks correct compressed public key', async () => {
@@ -532,7 +543,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, compressedKey])).toEqual(compressedKey)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, compressedKey])).toEqual(compressedKey)
   })
 
   it('validates signature with ethereum address', async () => {
@@ -540,7 +551,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, ethAddress])).toEqual(ethAddress)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, ethAddress])).toEqual(ethAddress)
   })
 
   it('validates signature with blockchainAccountId - github #155', async () => {
@@ -548,7 +559,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, blockchainAddress])).toEqual(blockchainAddress)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, blockchainAddress])).toEqual(blockchainAddress)
   })
 
   it('validates signature with blockchainAccountId - CAIP 10 (EIP 155)', async () => {
@@ -556,7 +567,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, blockchainAddressCaip10])).toEqual(blockchainAddressCaip10)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, blockchainAddressCaip10])).toEqual(blockchainAddressCaip10)
   })
 
   it('validates signature with blockchainAccountId - CAIP 10 (BIP 122)', async () => {
@@ -564,7 +575,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, blockchainAddressBip122])).toEqual(blockchainAddressBip122)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, blockchainAddressBip122])).toEqual(blockchainAddressBip122)
   })
 
   it('validates signature with blockchainAccountId - CAIP 10 (COSMOS)', async () => {
@@ -572,7 +583,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, blockchainAddressCosmos])).toEqual(blockchainAddressCosmos)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, blockchainAddressCosmos])).toEqual(blockchainAddressCosmos)
   })
 
   it('validates signature with EcdsaSecp256k1RecoveryMethod2020 - github #152', async () => {
@@ -580,7 +591,7 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [ecKey1, recoveryMethod2020Key])).toEqual(recoveryMethod2020Key)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1, recoveryMethod2020Key])).toEqual(recoveryMethod2020Key)
   })
 
   it('validates with publicKeyBase58', async () => {
@@ -591,7 +602,7 @@ describe('ES256K-R', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyBase64', async () => {
@@ -602,7 +613,7 @@ describe('ES256K-R', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyJwk', async () => {
@@ -613,7 +624,7 @@ describe('ES256K-R', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyMultibase', async () => {
@@ -624,7 +635,7 @@ describe('ES256K-R', () => {
     // @ts-ignore
     delete pubkey.publicKeyHex
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('ES256K-R', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('throws error if invalid signature', async () => {
@@ -632,20 +643,21 @@ describe('ES256K-R', () => {
     const jwt = await createJWT({ bla: 'bla' }, { issuer: did, signer: recoverySigner, alg: 'ES256K-R' })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(() => verifier(parts[1], parts[2], [ecKey1])).toThrowError(
+    return expect(() => verifier.verify('ES256K-R', parts[1], parts[2], [ecKey1])).toThrowError(
       new Error('invalid_signature: Signature invalid for JWT')
     )
   })
 })
 
 describe('Ed25519', () => {
-  const verifier = VerifierAlgorithm('Ed25519')
+  const verifier = new SoftwareVerifier()
+
   it('validates signature and picks correct public key', async () => {
     expect.assertions(1)
     const jwt = await createJWT({ bla: 'bla' }, { alg: 'Ed25519', issuer: did, signer: edSigner })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [edKey, edKey2])).toEqual(edKey)
+    return expect(verifier.verify('Ed25519', parts[1], parts[2], [edKey, edKey2])).toEqual(edKey)
   })
 
   it('validates with publicKeyBase58', async () => {
@@ -657,7 +669,7 @@ describe('Ed25519', () => {
     // @ts-ignore
     delete pubkey.publicKeyBase64
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('Ed25519', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('validates with publicKeyJwk', async () => {
@@ -673,7 +685,7 @@ describe('Ed25519', () => {
     // @ts-ignore
     delete pubkey.publicKeyBase64
     // @ts-ignore
-    return expect(verifier(parts[1], parts[2], [pubkey])).toEqual(pubkey)
+    return expect(verifier.verify('Ed25519', parts[1], parts[2], [pubkey])).toEqual(pubkey)
   })
 
   it('throws error if invalid signature', async () => {
@@ -681,7 +693,7 @@ describe('Ed25519', () => {
     const jwt = await createJWT({ bla: 'bla' }, { alg: 'Ed25519', issuer: did, signer: edSigner })
     const parts = jwt.match(/^([a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)$/)
     // @ts-ignore
-    return expect(() => verifier(parts[1], parts[2], [edKey2])).toThrowError(
+    return expect(() => verifier.verify('Ed25519', parts[1], parts[2], [edKey2])).toThrowError(
       new Error('invalid_signature: Signature invalid for JWT')
     )
   })

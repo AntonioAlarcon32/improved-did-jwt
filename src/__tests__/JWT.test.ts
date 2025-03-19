@@ -15,11 +15,11 @@ import {
   verifyJWS,
   verifyJWT,
 } from '../JWT.js'
-import { EdDSASigner } from '../signers/EdDSASigner.js'
-import { ES256KSigner } from '../signers/ES256KSigner.js'
+import { EdDSASigner } from '../software-signer/signers/EdDSASigner.js'
+import { ES256KSigner } from '../software-signer/signers/ES256KSigner.js'
 
 // add declarations for ES256 Tests
-import { ES256Signer } from '../signers/ES256Signer'
+import { ES256Signer } from '../software-signer/signers/ES256Signer'
 // @ts-ignore
 import jwt from 'jsonwebtoken'
 // @ts-ignore
@@ -1379,7 +1379,7 @@ describe('resolveAuthenticator()', () => {
       expect.assertions(1)
       return await expect(
         resolveAuthenticator({ resolve: jest.fn().mockReturnValue(singleKey) } as Resolvable, 'ESBAD', did)
-      ).rejects.toThrowError('No supported signature types for algorithm ESBAD')
+      ).rejects.toThrowError('Unsupported algorithm ESBAD')
     })
   })
 
