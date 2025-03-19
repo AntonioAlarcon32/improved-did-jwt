@@ -1,6 +1,7 @@
 import type { VerificationMethod } from 'did-resolver'
 import { JWT_ERROR } from './Errors.js'
 import { type JWTDecoded, type JWTVerifyOptions, resolveAuthenticator, verifyJWT, verifyJWTDecoded } from './JWT.js'
+import { AbstractVerifier } from './AbstractVerifier.js'
 
 export const CONDITIONAL_PROOF_2022 = 'ConditionalProof2022'
 
@@ -8,12 +9,13 @@ export async function verifyProof(
   jwt: string,
   { header, payload, signature, data }: JWTDecoded,
   authenticator: VerificationMethod,
-  options: JWTVerifyOptions
+  options: JWTVerifyOptions,
+  verifier?: AbstractVerifier
 ): Promise<VerificationMethod> {
   if (authenticator.type === CONDITIONAL_PROOF_2022) {
     return verifyConditionalProof(jwt, { payload, header, signature, data }, authenticator, options)
   } else {
-    return verifyJWTDecoded({ header, payload, data, signature }, [authenticator])
+    return verifyJWTDecoded({ header, payload, data, signature }, [authenticator], verifier)
   }
 }
 
