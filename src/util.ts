@@ -9,8 +9,6 @@ import { p256 } from '@noble/curves/p256'
 
 const u8a = { toString, fromString, concat }
 
-export type MaybePromise<T> = T | Promise<T> | PromiseLike<T>
-
 /**
  * @deprecated Signers will be expected to return base64url `string` signatures.
  */
@@ -57,6 +55,10 @@ export function base58ToBytes(s: string): Uint8Array {
 export function bytesToBase58(b: Uint8Array): string {
   return u8a.toString(b, 'base58btc')
 }
+
+/**
+ * @deprecated classes extending `AbstractVerifier` report their own supported algorithms and verification methods.
+ */
 export type KNOWN_VERIFICATION_METHOD =
   | 'JsonWebKey2020'
   | 'Multikey'
@@ -77,6 +79,9 @@ export type KNOWN_KEY_TYPE = 'Secp256k1' | 'Ed25519' | 'X25519' | 'Bls12381G1' |
 
 export type PublicKeyTypes = Record<string, KNOWN_VERIFICATION_METHOD[]>
 
+/**
+ * @deprecated classes extending `AbstractVerifier` report their own supported algorithms and verification methods.
+ */
 export const SUPPORTED_PUBLIC_KEY_TYPES: PublicKeyTypes = {
   ES256: ['JsonWebKey2020', 'Multikey', 'EcdsaSecp256r1VerificationKey2019'],
   ES256K: [
