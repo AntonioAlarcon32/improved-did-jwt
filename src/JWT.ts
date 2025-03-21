@@ -319,7 +319,7 @@ export async function createJWT(
 export async function createMultisignatureJWT(
   payload: Partial<JWTPayload>,
   { expiresIn, canonicalize }: Partial<JWTOptions>,
-  issuers: { issuer: string; signer: Signer; alg: string }[]
+  issuers: { issuer: string; signer: Signer | AbstractSigner; alg: string }[]
 ): Promise<string> {
   if (issuers.length === 0) throw new Error('invalid_argument: must provide one or more issuers')
 
@@ -393,7 +393,7 @@ export function verifyJWSDecoded(
     verifier = new SoftwareVerifier()
   }
   if (!Array.isArray(pubKeys)) pubKeys = [pubKeys]
-  const signer: VerificationMethod = verifier.verify(header.alg, data, signature, pubKeys)
+  const signer = verifier.verify(header.alg, data, signature, pubKeys)
   return signer
 }
 
