@@ -16,8 +16,6 @@ import {
   verifyJWS,
   verifyJWT,
 } from './JWT.js'
-import { AbstractSigner } from './AbstractSigner.js'
-
 export { toEthereumAddress, concatKDF } from './Digest.js'
 
 export { createJWE, decryptJWE } from './encryption/JWE.js'
