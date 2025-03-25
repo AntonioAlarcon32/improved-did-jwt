@@ -32,7 +32,7 @@ export interface JWTOptions {
   /**
    * The JWT signing algorithm to use. Supports:
    *   [ES256K, ES256K-R, Ed25519, EdDSA], Defaults to: ES256K.
-   * 
+   *
    * @deprecated Please use `header.alg` to specify the JWT algorithm.
    */
   alg?: string
@@ -48,8 +48,8 @@ export interface JWTOptions {
 
 export interface JWTVerifyOptions {
   /**
-   * Require signer to be listed in the authentication section of the DID document (for Authentication purposes) 
-   * 
+   * Require signer to be listed in the authentication section of the DID document (for Authentication purposes)
+   *
    * @deprecated Please use `proofPurpose: 'authentication' instead`
    * */
   auth?: boolean
@@ -339,7 +339,7 @@ interface Issuer {
  * createJWT({address: '5A8bRWU3F7j3REx3vkJ...', signer}, {key1: 'value', key2: ..., ... }).then(jwt => {
  *     ...
  * })
- * 
+ *
  * @param payload - payload object
  * @param jwtOpts - JWT options {@link JWTOptions}
  * @param issuers - array of the issuers, their signers and algorithms
@@ -460,9 +460,9 @@ export function verifyJWS(jws: string, pubKeys: VerificationMethod | Verificatio
  *       ...
  *   })
  * ```
- * 
+ *
  * @param jwt - a JSON Web Token to verify
- * @param jwtVerifyOpts 
+ * @param jwtVerifyOpts
  * @param verifier - an instance of a class extending {@link AbstractVerifier} to use for verification
  * @returns a promise which resolves with a response object or rejects with an error
  */
