@@ -1,3 +1,66 @@
+## [8.0.18](https://github.com/decentralized-identity/did-jwt/compare/8.0.17...8.0.18) (2025-08-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @scure/base to v2 ([016bad4](https://github.com/decentralized-identity/did-jwt/commit/016bad4a6e239223af29b8155f7d1dae483cf062))
+
+## [8.0.17](https://github.com/decentralized-identity/did-jwt/compare/8.0.16...8.0.17) (2025-06-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @noble/curves to v1.9.2 ([353d856](https://github.com/decentralized-identity/did-jwt/commit/353d85682d165fa6b1d9d962385c785b182cc28d))
+
+## [8.0.16](https://github.com/decentralized-identity/did-jwt/compare/8.0.15...8.0.16) (2025-05-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @scure/base to v1.2.6 ([bfb161c](https://github.com/decentralized-identity/did-jwt/commit/bfb161c628e62e66f91fa61a8c6b7ea77c595375))
+
+## [8.0.15](https://github.com/decentralized-identity/did-jwt/compare/8.0.14...8.0.15) (2025-05-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @noble/curves to v1.9.1 ([5facd37](https://github.com/decentralized-identity/did-jwt/commit/5facd37f9d5e40f603de5c69cda390eed2040bdf))
+
+## [8.0.14](https://github.com/decentralized-identity/did-jwt/compare/8.0.13...8.0.14) (2025-04-24)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([935290b](https://github.com/decentralized-identity/did-jwt/commit/935290bd107d1298731105229c2191ee632ed950))
+
+## [8.0.13](https://github.com/decentralized-identity/did-jwt/compare/8.0.12...8.0.13) (2025-04-23)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @noble/curves to v1.9.0 ([f67dc98](https://github.com/decentralized-identity/did-jwt/commit/f67dc98c06257308faa1146815b3008cce2750d0))
+
+## [8.0.12](https://github.com/decentralized-identity/did-jwt/compare/8.0.11...8.0.12) (2025-04-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @noble/hashes to v1.8.0 ([d3285fe](https://github.com/decentralized-identity/did-jwt/commit/d3285feb3a8f7551fb85f7b99e55bc691cec950c))
+
+## [8.0.11](https://github.com/decentralized-identity/did-jwt/compare/8.0.10...8.0.11) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @noble/curves to v1.8.2 ([8a826c4](https://github.com/decentralized-identity/did-jwt/commit/8a826c4d656db71fdb823fc527c0ac60e7fc0751))
+
+## [8.0.10](https://github.com/decentralized-identity/did-jwt/compare/8.0.9...8.0.10) (2025-04-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @noble/hashes to v1.7.2 ([33c260b](https://github.com/decentralized-identity/did-jwt/commit/33c260bcfa93954ff3907f8e28d8b7ecabf93427))
+
 ## [8.0.9](https://github.com/decentralized-identity/did-jwt/compare/8.0.8...8.0.9) (2025-03-19)
 
 
