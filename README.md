@@ -12,6 +12,11 @@ reasons, as well as the `Ed25519` legacy name for `EdDSA`.
 Public keys are resolved using the [Decentralized ID (DID)](https://w3c.github.io/did-core/#identifier) of the signing
 identity of the token, which is passed as the `iss` attribute of the JWT payload.
 
+> **Pluggable algorithms.** Beyond the built-in algorithms, you can plug in your own signing/verification
+> by passing an `AbstractSigner` to `createJWT` and an `AbstractVerifier` to `verifyJWT`. Use
+> `CompositeSigner` / `CompositeVerifier` to serve several algorithms at once. See
+> [Pluggable signing & verification](#pluggable-signing--verification) below.
+
 ## DID methods
 
 All DID methods that can be resolved using the [`did-resolver`](https://github.com/decentralized-identity/did-resolver)
@@ -145,3 +150,84 @@ expect(verificationResponse).toEqual({
   policies: {}
 })
 ```
+
+## Pluggable signing & verification
+
+The built-in algorithms (`ES256` / `ES256K` / `ES256K-R` / `EdDSA`) work out of the box, with no extra
+setup, through the bundled `SoftwareSigner` and `SoftwareVerifier`. Beyond those, you can supply your own
+signing or verification logic — or use one shipped as a separate package, such as `did-jwt-eip712-signer`
+(EIP-712 typed-data) or `did-jwt-webauthn-signer` (passkeys).
+
+### `AbstractSigner` / `AbstractVerifier`
+
+A custom algorithm is a pair of classes:
+
+```ts
+import { AbstractSigner, AbstractVerifier } from 'did-jwt'
+
+class MySigner extends AbstractSigner {
+  // which JWT `alg` values this signer can produce
+  static supportedAlgorithms = ['MyAlg']
+
+  async sign(data: string | Uint8Array, alg: string): Promise<string> {
+    /* return the base64url signature segment */
+  }
+}
+
+class MyVerifier extends AbstractVerifier {
+  // maps each `alg` to the DID verification-method types it can check
+  static supportedAlgorithmsAndVerificationMethods = { MyAlg: ['JsonWebKey2020'] }
+
+  verify(alg: string, data: string, signature: string, authenticators: VerificationMethod[]) {
+    /* return the VerificationMethod that verified the signature, or throw */
+  }
+
+  getSupportedVerificationMethods(alg: string): string[] {
+    return MyVerifier.supportedAlgorithmsAndVerificationMethods[alg]
+  }
+}
+```
+
+Pass instances straight into the core functions:
+
+```ts
+import { createJWT, verifyJWT } from 'did-jwt'
+
+const jwt = await createJWT(payload, { issuer, signer: new MySigner(), alg: 'MyAlg' })
+const verified = await verifyJWT(jwt, { resolver }, new MyVerifier())
+```
+
+`createJWT` also still accepts a plain legacy `Signer` function — it is auto-wrapped in `SoftwareSigner`.
+`verifyJWT` defaults to `SoftwareVerifier` when no verifier is passed.
+
+> **Note:** `AbstractVerifier.verify` may return a `VerificationMethod` **or a `Promise`** of one, so
+> verification is async. `verifyJWS`, `verifyJWSDecoded` and `verifyJWTDecoded` are therefore `async` —
+> `await` them.
+
+### `CompositeSigner` / `CompositeVerifier`
+
+`createJWT` / `verifyJWT` each take a single signer / verifier. To serve several algorithms at once, wrap
+them in a composite, which dispatches by the JWT `alg`:
+
+```ts
+import { createJWT, verifyJWT, CompositeSigner, CompositeVerifier, SoftwareSigner, SoftwareVerifier } from 'did-jwt'
+import { Eip712Signer, Eip712Verifier } from 'did-jwt-eip712-signer'
+
+const signer = new CompositeSigner([new SoftwareSigner(privateKeys), new Eip712Signer(wallet)])
+const jwt = await createJWT(payload, { issuer, signer, alg: 'EIP712' })
+
+const verifier = new CompositeVerifier([new SoftwareVerifier(), new Eip712Verifier()])
+const verified = await verifyJWT(jwt, { resolver }, verifier)
+```
+
+Each registered signer/verifier's algorithms are auto-discovered from its static `supportedAlgorithms` /
+`supportedAlgorithmsAndVerificationMethods`. You can also register explicitly — useful when a class does
+not declare its algorithms statically — and chain registrations:
+
+```ts
+const verifier = new CompositeVerifier()
+  .register(new SoftwareVerifier())
+  .register(new Eip712Verifier(), ['EIP712']) // explicit algorithms
+```
+
+Registering an algorithm that is already present replaces the previous signer/verifier for it.
