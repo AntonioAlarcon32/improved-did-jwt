@@ -378,11 +378,11 @@ export async function createMultisignatureJWT(
   return jwt
 }
 
-export function verifyJWTDecoded(
+export async function verifyJWTDecoded(
   { header, payload, data, signature }: JWTDecoded,
   pubKeys: VerificationMethod | VerificationMethod[],
   verifier?: AbstractVerifier
-): VerificationMethod {
+): Promise<VerificationMethod> {
   if (verifier === undefined) {
     verifier = new SoftwareVerifier()
   }
@@ -395,7 +395,7 @@ export function verifyJWTDecoded(
     if (iss !== payload.iss) throw new Error(`${JWT_ERROR.INVALID_JWT}: multiple issuers`)
 
     try {
-      const result = verifier.verify(header.alg, data, signature, pubKeys)
+      const result = await verifier.verify(header.alg, data, signature, pubKeys)
 
       return result
     } catch (e) {
@@ -413,16 +413,16 @@ export function verifyJWTDecoded(
   throw new Error(`${JWT_ERROR.INVALID_SIGNATURE}: no matching public key found`)
 }
 
-export function verifyJWSDecoded(
+export async function verifyJWSDecoded(
   { header, data, signature }: JWSDecoded,
   pubKeys: VerificationMethod | VerificationMethod[],
   verifier?: AbstractVerifier
-): VerificationMethod {
+): Promise<VerificationMethod> {
   if (verifier === undefined) {
     verifier = new SoftwareVerifier()
   }
   if (!Array.isArray(pubKeys)) pubKeys = [pubKeys]
-  const signer = verifier.verify(header.alg, data, signature, pubKeys)
+  const signer = await verifier.verify(header.alg, data, signature, pubKeys)
   return signer
 }
 
@@ -437,9 +437,12 @@ export function verifyJWSDecoded(
  *  @param    {Array<VerificationMethod> | VerificationMethod}    pubKeys     The public keys used to verify the JWS
  *  @return   {VerificationMethod}                       The public key used to sign the JWS
  */
-export function verifyJWS(jws: string, pubKeys: VerificationMethod | VerificationMethod[]): VerificationMethod {
+export async function verifyJWS(
+  jws: string,
+  pubKeys: VerificationMethod | VerificationMethod[]
+): Promise<VerificationMethod> {
   const jwsDecoded: JWSDecoded = decodeJWS(jws)
-  return verifyJWSDecoded(jwsDecoded, pubKeys)
+  return await verifyJWSDecoded(jwsDecoded, pubKeys)
 }
 
 /**

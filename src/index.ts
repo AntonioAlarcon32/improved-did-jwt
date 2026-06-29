@@ -60,6 +60,8 @@ export {
 
 export { AbstractSigner } from './AbstractSigner.js'
 export { AbstractVerifier } from './AbstractVerifier.js'
+export { CompositeSigner } from './CompositeSigner.js'
+export { CompositeVerifier } from './CompositeVerifier.js'
 
 export { SoftwareSigner } from './software-signer/SoftwareSigner.js'
 export type { SignAlgorithm } from './software-signer/SoftwareSigner.js'

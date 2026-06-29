@@ -22,7 +22,7 @@ for (const alg in algorithms) {
   supportedAlgsAndVerMethods[alg as SupportedAlg] = algorithms[alg as SupportedAlg].supportedVerificationMethods
 }
 export class SoftwareVerifier extends AbstractVerifier {
-  static supportedAlgsAndVerificationMethods = supportedAlgsAndVerMethods
+  static supportedAlgorithmsAndVerificationMethods = supportedAlgsAndVerMethods
 
   constructor() {
     super()

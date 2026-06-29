@@ -1077,20 +1077,22 @@ describe('JWS', () => {
     expect.assertions(1)
     const payload = { some: 'data' }
     const jws = await createJWS(payload, signer)
-    expect(() => verifyJWS(jws, { publicKeyHex: publicKey } as VerificationMethod)).not.toThrow()
+    await expect(verifyJWS(jws, { publicKeyHex: publicKey } as VerificationMethod)).resolves.toBeDefined()
   })
 
   it('verifyJWS works with base64url payload', async () => {
     expect.assertions(1)
     const encodedPayload = bytesToBase64url(hexToBytes(publicKey))
     const jws = await createJWS(encodedPayload, signer)
-    expect(() => verifyJWS(jws, { publicKeyHex: publicKey } as VerificationMethod)).not.toThrow()
+    await expect(verifyJWS(jws, { publicKeyHex: publicKey } as VerificationMethod)).resolves.toBeDefined()
   })
 
   it('verifyJWS fails with bad input', async () => {
     expect.assertions(1)
     const badJws = 'abrewguer.fjreoiwfoiew.foirheogu.reoguhwehrg'
-    expect(() => verifyJWS(badJws, { publicKeyHex: publicKey } as VerificationMethod)).toThrow('Incorrect format JWS')
+    await expect(verifyJWS(badJws, { publicKeyHex: publicKey } as VerificationMethod)).rejects.toThrow(
+      'Incorrect format JWS'
+    )
   })
 })
 

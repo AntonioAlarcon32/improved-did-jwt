@@ -9,7 +9,9 @@ export abstract class AbstractVerifier {
    * @param signature - the signature using algorithm `alg` to verify
    * @param authenticators - the list of verification methods to use for verification
    *
-   * @returns The verification method that successfully verified the signature
+   * @returns The verification method that successfully verified the signature.
+   * May be returned synchronously, or as a `Promise` for verifiers whose
+   * underlying primitives are async (e.g. WebCrypto-based WebAuthn verification).
    *
    * @throws Error If the algorithm is not supported
    * @throws Error If the signature is invalid
@@ -19,7 +21,7 @@ export abstract class AbstractVerifier {
     data: string,
     signature: string,
     authenticators: VerificationMethod[]
-  ): VerificationMethod
+  ): VerificationMethod | Promise<VerificationMethod>
 
   /**
    * Returns a list of supported verification methods for every algorithm supported by this verifier class
